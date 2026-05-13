@@ -15,5 +15,12 @@
       "20",
       "21"
     ]
+  },
+  {
+    "username": "e2euser445",
+    "password": "e2epass12",
+    "favorites": [
+      "1"
+    ]
   }
 ]
