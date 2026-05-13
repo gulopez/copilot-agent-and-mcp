@@ -1,27 +1,41 @@
 
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchBooks } from '../store/booksSlice';
+import { fetchBooks, setSort } from '../store/booksSlice';
 import { addFavorite, fetchFavorites } from '../store/favoritesSlice';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from '../styles/BookList.module.css';
 
 const BookList = () => {
   const dispatch = useAppDispatch();
   const books = useAppSelector(state => state.books.items);
   const status = useAppSelector(state => state.books.status);
+  const sortBy = useAppSelector(state => state.books.sortBy);
+  const sortOrder = useAppSelector(state => state.books.sortOrder);
   const token = useAppSelector(state => state.user.token);
   const navigate = useNavigate();
   const favorites = useAppSelector(state => state.favorites.items);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sortByParam = searchParams.get('sortBy');
+  const sortOrderParam = searchParams.get('sortOrder');
+  const currentSortBy = ['title', 'author'].includes(sortByParam) ? sortByParam : sortBy;
+  const currentSortOrder = ['asc', 'desc'].includes(sortOrderParam) ? sortOrderParam : sortOrder;
+
+  useEffect(() => {
+    if (!sortByParam || !sortOrderParam) {
+      setSearchParams({ sortBy: currentSortBy, sortOrder: currentSortOrder }, { replace: true });
+    }
+  }, [sortByParam, sortOrderParam, currentSortBy, currentSortOrder, setSearchParams]);
 
   useEffect(() => {
     if (!token) {
       navigate('/');
       return;
     }
-    dispatch(fetchBooks());
+    dispatch(setSort({ sortBy: currentSortBy, sortOrder: currentSortOrder }));
+    dispatch(fetchBooks({ sortBy: currentSortBy, sortOrder: currentSortOrder }));
     dispatch(fetchFavorites(token));
-  }, [dispatch, token, navigate]);
+  }, [dispatch, token, navigate, currentSortBy, currentSortOrder]);
 
   const handleAddFavorite = async (bookId) => {
     if (!token) {
@@ -32,12 +46,39 @@ const BookList = () => {
     dispatch(fetchFavorites(token));
   };
 
+  const handleSortChange = (event) => {
+    const [nextSortBy, nextSortOrder] = event.target.value.split('-');
+    dispatch(setSort({ sortBy: nextSortBy, sortOrder: nextSortOrder }));
+    setSearchParams({ sortBy: nextSortBy, sortOrder: nextSortOrder });
+  };
+
+  const currentSortLabel = currentSortBy === 'title'
+    ? `Title (${currentSortOrder === 'asc' ? 'A-Z' : 'Z-A'})`
+    : `Author (${currentSortOrder === 'asc' ? 'A-Z' : 'Z-A'})`;
+
   if (status === 'loading') return <div>Loading...</div>;
   if (status === 'failed') return <div>Failed to load books.</div>;
 
   return (
     <div>
       <h2>Books</h2>
+      <div className={styles.sortControls}>
+        <label htmlFor="book-sort">Sort by:</label>
+        <select
+          id="book-sort"
+          className={styles.sortSelect}
+          value={`${currentSortBy}-${currentSortOrder}`}
+          onChange={handleSortChange}
+        >
+          <option value="title-asc">Title (A-Z)</option>
+          <option value="title-desc">Title (Z-A)</option>
+          <option value="author-asc">Author (A-Z)</option>
+          <option value="author-desc">Author (Z-A)</option>
+        </select>
+        <span id="current-sort-indicator" className={styles.sortStatus}>
+          Current sort: {currentSortLabel}
+        </span>
+      </div>
       {books.length === 0 ? (
         <div style={{
           background: '#fff',
@@ -65,8 +106,8 @@ const BookList = () => {
                     </svg>
                   </span>
                 )}
-                <div className={styles.bookTitle}>{book.title}</div>
-                <div className={styles.bookAuthor}>by {book.author}</div>
+                <div className={styles.bookTitle} data-book-title>{book.title}</div>
+                <div className={styles.bookAuthor} data-book-author>by {book.author}</div>
                 <button
                   className={styles.simpleBtn}
                   onClick={() => handleAddFavorite(book.id)}

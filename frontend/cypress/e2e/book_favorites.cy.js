@@ -36,6 +36,26 @@ describe('Book Favorites App', () => {
     cy.get('h2').contains('My Favorite Books').should('exist');
   });
 
+  it('should keep selected sort state when navigating away and back', () => {
+    cy.contains('Login').click();
+    cy.get('input[name="username"]').type(user.username);
+    cy.get('input[name="password"]').type(user.password);
+    cy.get('button#login').click();
+    cy.contains('Books').click();
+    cy.get('#book-sort').select('Author (Z-A)');
+    cy.url().should('include', 'sortBy=author');
+    cy.url().should('include', 'sortOrder=desc');
+    cy.get('#current-sort-indicator').should('contain.text', 'Author (Z-A)');
+    cy.get('[data-book-title]').first().should('contain.text', 'Life of Pi');
+
+    cy.get('a#favorites-link').click();
+    cy.get('a#books-link').click();
+    cy.get('#book-sort').should('have.value', 'author-desc');
+    cy.url().should('include', 'sortBy=author');
+    cy.url().should('include', 'sortOrder=desc');
+    cy.get('#current-sort-indicator').should('contain.text', 'Author (Z-A)');
+  });
+
   it('should logout and protect routes', () => {
     // Login first
     cy.contains('Login').click();
