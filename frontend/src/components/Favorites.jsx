@@ -12,6 +12,7 @@ const Favorites = () => {
 
   const [editingId, setEditingId] = useState(null);
   const [commentDraft, setCommentDraft] = useState('');
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -24,9 +25,11 @@ const Favorites = () => {
   const handleEditComment = (book) => {
     setEditingId(book.id);
     setCommentDraft(book.comment || '');
+    setSaveError(null);
   };
 
   const handleSaveComment = (bookId) => {
+    setSaveError(null);
     dispatch(updateFavoriteComment({ token, bookId, comment: commentDraft }))
       .unwrap()
       .then(() => {
@@ -34,13 +37,14 @@ const Favorites = () => {
         setCommentDraft('');
       })
       .catch(() => {
-        // Keep the editing UI open so the user can retry
+        setSaveError('Failed to save comment. Please try again.');
       });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setCommentDraft('');
+    setSaveError(null);
   };
 
   if (status === 'loading') return <div>Loading...</div>;
@@ -94,6 +98,9 @@ const Favorites = () => {
                         boxSizing: 'border-box',
                       }}
                     />
+                    {saveError && (
+                      <p style={{ color: '#c0392b', fontSize: '0.85rem', margin: '0.3rem 0' }}>{saveError}</p>
+                    )}
                     <div style={{ marginTop: '0.4rem', display: 'flex', gap: '0.5rem' }}>
                       <button
                         onClick={() => handleSaveComment(book.id)}
