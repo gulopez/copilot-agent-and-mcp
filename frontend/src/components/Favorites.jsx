@@ -27,9 +27,15 @@ const Favorites = () => {
   };
 
   const handleSaveComment = (bookId) => {
-    dispatch(updateFavoriteComment({ token, bookId, comment: commentDraft }));
-    setEditingId(null);
-    setCommentDraft('');
+    dispatch(updateFavoriteComment({ token, bookId, comment: commentDraft }))
+      .unwrap()
+      .then(() => {
+        setEditingId(null);
+        setCommentDraft('');
+      })
+      .catch(() => {
+        // Keep the editing UI open so the user can retry
+      });
   };
 
   const handleCancelEdit = () => {
