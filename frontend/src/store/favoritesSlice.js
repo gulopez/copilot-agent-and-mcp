@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const fetchFavorites = createAsyncThunk('favorites/fetchFavorites', async (token) => {
   const res = await fetch('http://localhost:4000/api/favorites', {
-    headers: { Authorization: `****** },
+    headers: { Authorization: 'Bearer ' + token },
   });
   return res.json();
 });
@@ -12,7 +12,7 @@ export const addFavorite = createAsyncThunk('favorites/addFavorite', async ({ to
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `******
+      Authorization: 'Bearer ' + token,
     },
     body: JSON.stringify({ bookId }),
   });
@@ -22,11 +22,11 @@ export const addFavorite = createAsyncThunk('favorites/addFavorite', async ({ to
 export const updateFavoriteComment = createAsyncThunk(
   'favorites/updateFavoriteComment',
   async ({ token, bookId, comment }) => {
-    const res = await fetch(`http://localhost:4000/api/favorites/${bookId}/comment`, {
+    const res = await fetch('http://localhost:4000/api/favorites/' + bookId + '/comment', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `******
+        Authorization: 'Bearer ' + token,
       },
       body: JSON.stringify({ comment }),
     });
