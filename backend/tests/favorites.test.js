@@ -111,4 +111,63 @@ describe('Favorites API', () => {
       .send({ bookId: '1' });
     expect(res.statusCode).toBe(401);
   });
+
+  it('PUT /api/favorites/:bookId/comment should add a comment', async () => {
+    const token = getToken('sandra');
+    const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+    const sandra = users.find(u => u.username === 'sandra');
+    const favBookId = sandra.favorites[0];
+    const res = await request(app)
+      .put(`/api/favorites/${favBookId}/comment`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({ comment: 'A wonderful read!' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toMatch(/updated/);
+  });
+
+  it('PUT /api/favorites/:bookId/comment should return comment in GET', async () => {
+    const token = getToken('sandra');
+    const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+    const sandra = users.find(u => u.username === 'sandra');
+    const favBookId = sandra.favorites[0];
+    await request(app)
+      .put(`/api/favorites/${favBookId}/comment`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({ comment: 'Persisted comment' });
+    const res = await request(app)
+      .get('/api/favorites')
+      .set('Authorization', 'Bearer ' + token);
+    expect(res.statusCode).toBe(200);
+    const book = res.body.find(b => b.id === favBookId);
+    expect(book).toBeDefined();
+    expect(book.comment).toBe('Persisted comment');
+  });
+
+  it('PUT /api/favorites/:bookId/comment should 404 for non-favorite book', async () => {
+    const token = getToken('sandra');
+    const res = await request(app)
+      .put('/api/favorites/99999/comment')
+      .set('Authorization', 'Bearer ' + token)
+      .send({ comment: 'test' });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('PUT /api/favorites/:bookId/comment should 400 without comment field', async () => {
+    const token = getToken('sandra');
+    const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+    const sandra = users.find(u => u.username === 'sandra');
+    const favBookId = sandra.favorites[0];
+    const res = await request(app)
+      .put(`/api/favorites/${favBookId}/comment`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({});
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('PUT /api/favorites/:bookId/comment should 401 without auth', async () => {
+    const res = await request(app)
+      .put('/api/favorites/1/comment')
+      .send({ comment: 'test' });
+    expect(res.statusCode).toBe(401);
+  });
 });
