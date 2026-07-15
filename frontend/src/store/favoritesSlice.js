@@ -22,7 +22,7 @@ export const addFavorite = createAsyncThunk('favorites/addFavorite', async ({ to
 export const updateFavoriteComment = createAsyncThunk(
   'favorites/updateFavoriteComment',
   async ({ token, bookId, comment }) => {
-    await fetch(`http://localhost:4000/api/favorites/${bookId}/comment`, {
+    const res = await fetch(`http://localhost:4000/api/favorites/${bookId}/comment`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -30,6 +30,10 @@ export const updateFavoriteComment = createAsyncThunk(
       },
       body: JSON.stringify({ comment }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || 'Failed to update comment');
+    }
     return { bookId, comment };
   }
 );
