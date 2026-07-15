@@ -36,8 +36,8 @@ const Favorites = () => {
         setEditingId(null);
         setCommentDraft('');
       })
-      .catch(() => {
-        setSaveError('Failed to save comment. Please try again.');
+      .catch((err) => {
+        setSaveError(err?.message || 'Failed to save comment. Please try again.');
       });
   };
 
