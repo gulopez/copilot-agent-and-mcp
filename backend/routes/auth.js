@@ -9,18 +9,14 @@ function getUserRole(user) {
 }
 
 function normalizeUsers(users) {
-  let changed = false;
-  const normalizedUsers = users.map(user => {
-    const role = getUserRole(user);
-    if (user.role === role) {
-      return user;
-    }
+  const needsNormalization = users.some(user => user.role !== getUserRole(user));
+  if (!needsNormalization) {
+    return { changed: false, normalizedUsers: users };
+  }
 
-    changed = true;
-    return { ...user, role };
-  });
+  const normalizedUsers = users.map(user => ({ ...user, role: getUserRole(user) }));
 
-  return { changed, normalizedUsers };
+  return { changed: true, normalizedUsers };
 }
 
 function createAuthRouter({ usersFile, readJSON, writeJSON, SECRET_KEY }) {

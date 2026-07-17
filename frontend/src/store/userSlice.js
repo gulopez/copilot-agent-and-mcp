@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-function getStoredRole() {
+function getInitialRole() {
   const storedRole = localStorage.getItem('role');
   if (storedRole) {
     return storedRole;
@@ -27,7 +27,7 @@ function getStoredRole() {
 const initialState = {
   token: localStorage.getItem('token') || null,
   username: localStorage.getItem('username') || null,
-  role: getStoredRole(),
+  role: getInitialRole(),
 };
 
 const userSlice = createSlice({

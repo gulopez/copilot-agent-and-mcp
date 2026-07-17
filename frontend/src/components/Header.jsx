@@ -2,12 +2,16 @@ import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout } from '../store/userSlice';
 import { useNavigate } from 'react-router-dom';
 
+function capitalizeRole(role) {
+  return `${role.charAt(0).toUpperCase()}${role.slice(1)}`;
+}
+
 const Header = () => {
   const username = useAppSelector(state => state.user.username);
   const role = useAppSelector(state => state.user.role);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const roleLabel = role ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : null;
+  const roleLabel = role ? capitalizeRole(role) : null;
 
   const handleLogout = () => {
     dispatch(logout());
