@@ -1,6 +1,28 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
+const DEFAULT_ROLE = 'member';
+const VALID_ROLES = new Set(['member', 'administrator']);
+
+function getUserRole(user) {
+  return VALID_ROLES.has(user.role) ? user.role : DEFAULT_ROLE;
+}
+
+function normalizeUsers(users) {
+  let changed = false;
+  const normalizedUsers = users.map(user => {
+    const role = getUserRole(user);
+    if (user.role === role) {
+      return user;
+    }
+
+    changed = true;
+    return { ...user, role };
+  });
+
+  return { changed, normalizedUsers };
+}
+
 function createAuthRouter({ usersFile, readJSON, writeJSON, SECRET_KEY }) {
   const router = express.Router();
 
@@ -11,18 +33,21 @@ function createAuthRouter({ usersFile, readJSON, writeJSON, SECRET_KEY }) {
     if (users.find(u => u.username === username)) {
       return res.status(409).json({ message: 'User already exists' });
     }
-    users.push({ username, password, favorites: [] });
+    users.push({ username, password, favorites: [], role: DEFAULT_ROLE });
     writeJSON(usersFile, users);
     res.status(201).json({ message: 'User registered' });
   });
 
   router.post('/login', (req, res) => {
     const { username, password } = req.body;
-    const users = readJSON(usersFile);
-    const user = users.find(u => u.username === username && u.password === password);
+    const { changed, normalizedUsers } = normalizeUsers(readJSON(usersFile));
+    if (changed) {
+      writeJSON(usersFile, normalizedUsers);
+    }
+    const user = normalizedUsers.find(u => u.username === username && u.password === password);
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign({ username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ token, username: user.username, role: user.role });
   });
 
   return router;
