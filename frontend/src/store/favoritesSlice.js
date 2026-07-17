@@ -26,12 +26,15 @@ export const removeFavorite = createAsyncThunk('favorites/removeFavorite', async
   });
   if (!res.ok) {
     let message = 'Failed to remove favorite';
+    let errorData = null;
     try {
-      const errorData = await res.json();
-      if (errorData?.message) {
-        message = errorData.message;
-      }
-    } catch {}
+      errorData = await res.json();
+    } catch (_parseError) {
+      errorData = null;
+    }
+    if (errorData?.message) {
+      message = errorData.message;
+    }
     throw new Error(message);
   }
   return bookId;
@@ -45,15 +48,12 @@ const favoritesSlice = createSlice({
     builder
       .addCase(fetchFavorites.pending, state => {
         state.status = 'loading';
-        state.removeError = null;
       })
       .addCase(fetchFavorites.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items = action.payload;
-        state.removeError = null;
       })
       .addCase(fetchFavorites.rejected, state => { state.status = 'failed'; })
-      .addCase(addFavorite.fulfilled, () => {})
       .addCase(removeFavorite.pending, state => {
         state.removeError = null;
       })
