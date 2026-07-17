@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchFavorites } from '../store/favoritesSlice';
+import { fetchFavorites, removeFavorite } from '../store/favoritesSlice';
 import { useNavigate } from 'react-router-dom';
 
 const Favorites = () => {
   const dispatch = useAppDispatch();
   const favorites = useAppSelector(state => state.favorites.items);
   const status = useAppSelector(state => state.favorites.status);
+  const removeError = useAppSelector(state => state.favorites.removeError);
   const token = useAppSelector(state => state.user.token);
   const navigate = useNavigate();
 
@@ -18,12 +19,21 @@ const Favorites = () => {
     dispatch(fetchFavorites(token));
   }, [dispatch, token, navigate]);
 
+  const handleRemoveFavorite = async (bookId) => {
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    await dispatch(removeFavorite({ token, bookId }));
+  };
+
   if (status === 'loading') return <div>Loading...</div>;
   if (status === 'failed') return <div>Failed to load favorites.</div>;
 
   return (
     <div>
       <h2>My Favorite Books</h2>
+      {removeError && <div style={{ color: '#b91c1c' }}>{removeError}</div>}
       {favorites.length === 0 ? (
         <div style={{
           background: '#fff',
@@ -45,6 +55,12 @@ const Favorites = () => {
           {favorites.map(book => (
             <li key={book.id}>
               <strong>{book.title}</strong> by {book.author}
+              <button
+                style={{ marginLeft: '0.75rem' }}
+                onClick={() => handleRemoveFavorite(book.id)}
+              >
+                Remove from Favorites
+              </button>
             </li>
           ))}
         </ul>
