@@ -2,6 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const createApiRouter = require('../routes');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
@@ -39,6 +40,27 @@ describe('Auth API', () => {
     const res = await request(app).post('/api/login').send(testUser);
     expect(res.statusCode).toBe(200);
     expect(res.body.token).toBeDefined();
+    expect(res.body.username).toBe(testUser.username);
+    expect(res.body.role).toBe('member');
+  });
+
+  it('POST /api/login should default legacy users to the member role', async () => {
+    const usersFile = path.join(__dirname, '../data/test-users.json');
+    const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+    const legacyUser = { username: 'legacyuser', password: 'legacy-pass', favorites: [] };
+    fs.writeFileSync(usersFile, JSON.stringify([...users, legacyUser], null, 2));
+
+    const res = await request(app).post('/api/login').send({ username: legacyUser.username, password: legacyUser.password });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.role).toBe('member');
+
+    const updatedUsers = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
+    expect(updatedUsers.find(user => user.username === legacyUser.username).role).toBe('member');
+
+    fs.writeFileSync(
+      usersFile,
+      JSON.stringify(updatedUsers.filter(user => user.username !== legacyUser.username), null, 2)
+    );
   });
 
   it('POST /api/login should fail with wrong password', async () => {

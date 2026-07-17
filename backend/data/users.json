@@ -2,6 +2,7 @@
   {
     "username": "sandra",
     "password": "sandra",
+    "role": "administrator",
     "favorites": [
       "1",
       "2",
@@ -19,6 +20,7 @@
   {
     "username": "e2euser445",
     "password": "e2epass12",
+    "role": "member",
     "favorites": [
       "1"
     ]
@@ -26,6 +28,7 @@
   {
     "username": "e2euser202",
     "password": "e2epass627",
+    "role": "member",
     "favorites": [
       "1"
     ]
@@ -33,6 +36,7 @@
   {
     "username": "e2euser34",
     "password": "e2epass780",
+    "role": "member",
     "favorites": [
       "1"
     ]
