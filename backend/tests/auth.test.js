@@ -47,15 +47,20 @@ describe('Auth API', () => {
   it('POST /api/login should default legacy users to the member role', async () => {
     const usersFile = path.join(__dirname, '../data/test-users.json');
     const users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
-    users.push({ username: 'legacyuser', password: 'legacy-pass', favorites: [] });
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+    const legacyUser = { username: 'legacyuser', password: 'legacy-pass', favorites: [] };
+    fs.writeFileSync(usersFile, JSON.stringify([...users, legacyUser], null, 2));
 
-    const res = await request(app).post('/api/login').send({ username: 'legacyuser', password: 'legacy-pass' });
+    const res = await request(app).post('/api/login').send({ username: legacyUser.username, password: legacyUser.password });
     expect(res.statusCode).toBe(200);
     expect(res.body.role).toBe('member');
 
     const updatedUsers = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
-    expect(updatedUsers.find(user => user.username === 'legacyuser').role).toBe('member');
+    expect(updatedUsers.find(user => user.username === legacyUser.username).role).toBe('member');
+
+    fs.writeFileSync(
+      usersFile,
+      JSON.stringify(updatedUsers.filter(user => user.username !== legacyUser.username), null, 2)
+    );
   });
 
   it('POST /api/login should fail with wrong password', async () => {

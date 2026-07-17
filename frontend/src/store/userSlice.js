@@ -1,7 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+const VALID_ROLES = new Set(['member', 'administrator']);
+
+function normalizeRole(role) {
+  return VALID_ROLES.has(role) ? role : null;
+}
+
 function getInitialRole() {
-  const storedRole = localStorage.getItem('role');
+  const storedRole = normalizeRole(localStorage.getItem('role'));
   if (storedRole) {
     return storedRole;
   }
@@ -18,7 +24,7 @@ function getInitialRole() {
     }
 
     const parsedPayload = JSON.parse(atob(payload));
-    return parsedPayload.role || 'member';
+    return normalizeRole(parsedPayload.role) || 'member';
   } catch {
     return null;
   }

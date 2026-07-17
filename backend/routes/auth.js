@@ -8,17 +8,6 @@ function getUserRole(user) {
   return VALID_ROLES.has(user.role) ? user.role : DEFAULT_ROLE;
 }
 
-function normalizeUsers(users) {
-  const needsNormalization = users.some(user => user.role !== getUserRole(user));
-  if (!needsNormalization) {
-    return { changed: false, normalizedUsers: users };
-  }
-
-  const normalizedUsers = users.map(user => ({ ...user, role: getUserRole(user) }));
-
-  return { changed: true, normalizedUsers };
-}
-
 function createAuthRouter({ usersFile, readJSON, writeJSON, SECRET_KEY }) {
   const router = express.Router();
 
@@ -36,14 +25,19 @@ function createAuthRouter({ usersFile, readJSON, writeJSON, SECRET_KEY }) {
 
   router.post('/login', (req, res) => {
     const { username, password } = req.body;
-    const { changed, normalizedUsers } = normalizeUsers(readJSON(usersFile));
-    if (changed) {
-      writeJSON(usersFile, normalizedUsers);
-    }
-    const user = normalizedUsers.find(u => u.username === username && u.password === password);
+    const users = readJSON(usersFile);
+    const userIndex = users.findIndex(u => u.username === username && u.password === password);
+    const user = userIndex >= 0 ? users[userIndex] : null;
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token, username: user.username, role: user.role });
+
+    const role = getUserRole(user);
+    if (user.role !== role) {
+      users[userIndex] = { ...user, role };
+      writeJSON(usersFile, users);
+    }
+
+    const token = jwt.sign({ username: user.username, role }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ token, username: user.username, role });
   });
 
   return router;
