@@ -1,7 +1,14 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 
 function createFavoritesRouter({ usersFile, booksFile, readJSON, writeJSON, authenticateToken }) {
   const router = express.Router();
+  const favoritesMutationLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 30,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+  });
 
   router.get('/', authenticateToken, (req, res) => {
     const users = readJSON(usersFile);
@@ -12,7 +19,7 @@ function createFavoritesRouter({ usersFile, booksFile, readJSON, writeJSON, auth
     res.json(favorites);
   });
 
-  router.post('/', authenticateToken, (req, res) => {
+  router.post('/', favoritesMutationLimiter, authenticateToken, (req, res) => {
     const { bookId } = req.body;
     if (!bookId) return res.status(400).json({ message: 'Book ID required' });
     const users = readJSON(usersFile);
@@ -23,6 +30,19 @@ function createFavoritesRouter({ usersFile, booksFile, readJSON, writeJSON, auth
       writeJSON(usersFile, users);
     }
     res.status(200).json({ message: 'Book added to favorites' });
+  });
+
+  router.delete('/:bookId', favoritesMutationLimiter, authenticateToken, (req, res) => {
+    const { bookId } = req.params;
+    if (!bookId) return res.status(400).json({ message: 'Book ID required' });
+    const users = readJSON(usersFile);
+    const user = users.find(u => u.username === req.user.username);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const favoriteIndex = user.favorites.indexOf(bookId);
+    if (favoriteIndex === -1) return res.status(404).json({ message: 'Book not in favorites' });
+    user.favorites.splice(favoriteIndex, 1);
+    writeJSON(usersFile, users);
+    res.status(200).json({ message: 'Book removed from favorites' });
   });
 
   return router;

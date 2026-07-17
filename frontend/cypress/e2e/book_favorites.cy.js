@@ -46,6 +46,14 @@ describe('Book Favorites App', () => {
     cy.get('button').contains('Add to Favorites').first().click();
     cy.get('a#favorites-link').click();
     cy.get('h2').contains('My Favorite Books').should('exist');
+    cy.get('ul li').first().then($item => {
+      const title = $item.find('strong').text();
+      cy.wrap($item).contains('button', 'Remove from Favorites').click();
+      cy.contains('strong', title).should('not.exist');
+      cy.reload();
+      cy.get('h2').contains('My Favorite Books').should('exist');
+      cy.contains('strong', title).should('not.exist');
+    });
   });
 
   it('should logout and protect routes', () => {
